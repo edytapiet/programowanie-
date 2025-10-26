@@ -1,3 +1,3 @@
 print("Hello Git!")
 print("Zmiana na main")
-print("Zmiana na test - wersja konkurencyjna ")
+print("Zmiana na test - wersja konkurencyjna "):
