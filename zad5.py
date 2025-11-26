@@ -4,5 +4,6 @@ def sprawdz(lista, liczba):
             return True
     return False
 
+
 print(sprawdz([10, 20, 30], 20))
 print(sprawdz([10, 20, 30], 5))

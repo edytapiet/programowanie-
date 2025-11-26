@@ -8,9 +8,10 @@ def polacz_i_przetworz(lista1, lista2):
 
     wynik = []
     for x in nowe:
-        wynik.append(x ** 3)
+        wynik.append(x**3)
 
     return wynik
+
 
 lista_a = [1, 2, 3]
 lista_b = [2, 4]
