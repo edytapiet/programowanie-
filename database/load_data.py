@@ -2,19 +2,36 @@ import csv
 from database.db import Base, engine, SessionLocal
 from database.models import Movie, Link, Rating, Tag
 
-Base.metadata.create_all(bind=engine)
 
+Base.metadata.create_all(bind=engine)
 session = SessionLocal()
 
-# movies.csv
+
 with open("database/movies.csv", encoding="utf-8") as f:
     reader = csv.DictReader(f)
     for row in reader:
-        movie = Movie(movieId=row["movieId"], title=row["title"], genres=row["genres"])
-        session.add(movie)
+        session.add(Movie(movieId=row["movieId"], title=row["title"], genres=row["genres"]))
 
-# podobnie links.csv, ratings.csv, tags.csv
+
+with open("database/links.csv", encoding="utf-8") as f:
+    reader = csv.DictReader(f)
+    for row in reader:
+        session.add(Link(movieId=row["movieId"], imdbId=row["imdbId"], tmdbId=row["tmdbId"]))
+
+
+with open("database/ratings.csv", encoding="utf-8") as f:
+    reader = csv.DictReader(f)
+    for row in reader:
+        session.add(Rating(userId=row["userId"], movieId=row["movieId"],
+                           rating=float(row["rating"]), timestamp=row["timestamp"]))
+
+
+with open("database/tags.csv", encoding="utf-8") as f:
+    reader = csv.DictReader(f)
+    for row in reader:
+        session.add(Tag(userId=row["userId"], movieId=row["movieId"],
+                        tag=row["tag"], timestamp=row["timestamp"]))
 
 session.commit()
 session.close()
-print("Dane załadowane do SQLite")
+print("Wszystkie dane załadowane!")
