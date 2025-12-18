@@ -1,1 +1,1 @@
-To jest plik testowy
+Zmiana na test_2 - konflikt soon
