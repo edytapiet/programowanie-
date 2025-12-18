@@ -1,1 +1,4 @@
 Tekst z galezi test
+
+Zmiana na test_2 - konflikt soon
+
