@@ -40,7 +40,6 @@ def get_movies():
         for row in reader:
 
             movie_obj = Movie(row['movieId'], row['title'], row['genres'])
-            # Serializacja za pomocą __dict__ i dodanie do listy
             movies_list.append(movie_obj.__dict__)
     return movies_list
 
