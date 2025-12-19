@@ -1,8 +1,6 @@
 import csv
 from fastapi import FastAPI
-
 app = FastAPI()
-
 
 class Movie:
     def __init__(self, movieId, title, genres):
@@ -32,16 +30,17 @@ class Tag:
 
 
 
+
 @app.get("/movies")
 def get_movies():
     movies_list = []
     with open('movies.csv', mode='r', encoding='utf-8') as file:
         reader = csv.DictReader(file)
         for row in reader:
-
             movie_obj = Movie(row['movieId'], row['title'], row['genres'])
             movies_list.append(movie_obj.__dict__)
     return movies_list
+
 
 @app.get("/links")
 def get_links():
@@ -53,6 +52,7 @@ def get_links():
             links_list.append(link_obj.__dict__)
     return links_list
 
+
 @app.get("/ratings")
 def get_ratings():
     ratings_list = []
@@ -62,6 +62,7 @@ def get_ratings():
             rating_obj = Rating(row['userId'], row['movieId'], row['rating'], row['timestamp'])
             ratings_list.append(rating_obj.__dict__)
     return ratings_list
+
 
 @app.get("/tags")
 def get_tags():
