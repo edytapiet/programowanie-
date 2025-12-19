@@ -1,4 +1,4 @@
-from . import utils
+import magazine.utils
 
 class Product:
     def __init__(self, name):
