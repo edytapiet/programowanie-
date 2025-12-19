@@ -1,2 +1,2 @@
 def helper():
-    return "Pomoc z utils"
+    return "Dane z utils"
