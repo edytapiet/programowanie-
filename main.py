@@ -1,101 +1,92 @@
-import sqlite3
-from fastapi import FastAPI
-import uvicorn
+from fastapi import FastAPI, UploadFile, File, HTTPException
+from ultralytics import YOLO
+import cv2
+import os
+import uuid
+import shutil
+import requests
+import numpy as np
 
 app = FastAPI()
-DB_NAME = "movies.db"
 
 
-class Movie:
-    def __init__(self, movieId, title, genres):
-        self.movieId = movieId
-        self.title = title
-        self.genres = genres
+print("Ładowanie modelu YOLO...")
+model = YOLO('yolov8n.pt')
+print("Model załadowany!")
+
+os.makedirs("images", exist_ok=True)
+os.makedirs("processed", exist_ok=True)
 
 
-class Link:
-    def __init__(self, movieId, imdbId, tmdbId):
-        self.movieId = movieId
-        self.imdbId = imdbId
-        self.tmdbId = tmdbId
+def process_image(image_path: str):
+
+    results = model(image_path, classes=0)
+
+    people_count = 0
+    output_filename = f"processed/done_{os.path.basename(image_path)}"
+
+    for result in results:
+        people_count += len(result.boxes)
+
+        im_array = result.plot()
+
+        cv2.imwrite(output_filename, im_array)
+
+    return people_count, output_filename
 
 
-class Rating:
-    def __init__(self, userId, movieId, rating, timestamp):
-        self.userId = userId
-        self.movieId = movieId
-        self.rating = rating
-        self.timestamp = timestamp
+@app.get("/")
+def read_root():
+    return {"message": "API działa! Wejdź na /docs"}
 
 
-class Tag:
-    def __init__(self, userId, movieId, tag, timestamp):
-        self.userId = userId
-        self.movieId = movieId
-        self.tag = tag
-        self.timestamp = timestamp
+
+@app.get("/detect/local")
+def detect_local(file_path: str):
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="Plik nie istnieje")
+
+    count, out_path = process_image(file_path)
+    return {
+        "source": "local",
+        "people_count": count,
+        "saved_image": out_path
+    }
 
 
-def get_rows_from_db(table_name):
-    connection = sqlite3.connect(DB_NAME)
-    connection.row_factory = sqlite3.Row
-    cursor = connection.cursor()
+@app.get("/detect/url")
+def detect_url(image_url: str):
+    try:
+        response = requests.get(image_url)
+        if response.status_code != 200:
+            raise HTTPException(status_code=400, detail="Nie udało się pobrać zdjęcia")
 
-    cursor.execute(f"SELECT * FROM {table_name}")
-    rows = cursor.fetchall()
-
-    connection.close()
-    return rows
-
-
-@app.get("/movies")
-def get_movies():
-    rows = get_rows_from_db("movies")
-    results = []
-
-    for row in rows:
-        genres_list = row["genres"].split("|")
-        movie = Movie(row["movieId"], row["title"], genres_list)
-        results.append(movie.__dict__)
-
-    return results
+        filename = f"images/{uuid.uuid4()}.jpg"
+        with open(filename, 'wb') as f:
+            f.write(response.content)
 
 
-@app.get("/links")
-def get_links():
-    rows = get_rows_from_db("links")
-    results = []
+        count, out_path = process_image(filename)
 
-    for row in rows:
-        link = Link(row["movieId"], row["imdbId"], row["tmdbId"])
-        results.append(link.__dict__)
-
-    return results
-
-
-@app.get("/ratings")
-def get_ratings():
-    rows = get_rows_from_db("ratings")
-    results = []
-
-    for row in rows:
-        rating = Rating(row["userId"], row["movieId"], row["rating"], row["timestamp"])
-        results.append(rating.__dict__)
-
-    return results
+        return {
+            "source": "url",
+            "people_count": count,
+            "saved_image": out_path
+        }
+    except Exception as e:
+        return {"error": str(e)}
 
 
-@app.get("/tags")
-def get_tags():
-    rows = get_rows_from_db("tags")
-    results = []
+@app.post("/detect/upload")
+def detect_upload(file: UploadFile = File(...)):
+    filename = f"images/{uuid.uuid4()}_{file.filename}"
+    with open(filename, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
 
-    for row in rows:
-        tag = Tag(row["userId"], row["movieId"], row["tag"], row["timestamp"])
-        results.append(tag.__dict__)
+    count, out_path = process_image(filename)
 
-    return results
-
-
-if __name__ == "__main__":
-    uvicorn.run("main:app", reload=True)
+    return {
+        "source": "upload",
+        "people_count": count,
+        "saved_image": out_path
+    }
