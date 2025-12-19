@@ -1,47 +1,52 @@
 import sqlite3
 import csv
 
-DB_NAME = "movies.db"
 
-def setup_database():
-    with sqlite3.connect(DB_NAME) as conn:
-        cursor = conn.cursor()
+def make_database():
+    print("Starting database creation...")
 
-        schemas = {
-            "movies": "movieId INTEGER PRIMARY KEY, title TEXT, genres TEXT",
-            "links":  "movieId INTEGER, imdbId TEXT, tmdbId TEXT",
-            "ratings": "userId INTEGER, movieId INTEGER, rating REAL, timestamp INTEGER",
-            "tags":    "userId INTEGER, movieId INTEGER, tag TEXT, timestamp INTEGER"
-        }
+    connection = sqlite3.connect("movies.db")
+    cursor = connection.cursor()
 
-        print("--- Setting up Database ---")
+    cursor.execute("DROP TABLE IF EXISTS movies")
+    cursor.execute("CREATE TABLE movies (movieId INTEGER, title TEXT, genres TEXT)")
+    print("Created table: movies")
 
-        for table, columns in schemas.items():
-            cursor.execute(f"DROP TABLE IF EXISTS {table}")
-            cursor.execute(f"CREATE TABLE {table} ({columns})")
-            print(f"Table '{table}' created.")
+    cursor.execute("DROP TABLE IF EXISTS links")
+    cursor.execute("CREATE TABLE links (movieId INTEGER, imdbId TEXT, tmdbId TEXT)")
+    print("Created table: links")
 
-        print("\n--- Loading Data ---")
+    cursor.execute("DROP TABLE IF EXISTS ratings")
+    cursor.execute("CREATE TABLE ratings (userId INTEGER, movieId INTEGER, rating REAL, timestamp INTEGER)")
+    print("Created table: ratings")
 
-        files_map = [
-            ("movies.csv", "movies", 3),
-            ("links.csv", "links", 3),
-            ("ratings.csv", "ratings", 4),
-            ("tags.csv", "tags", 4)
-        ]
+    cursor.execute("DROP TABLE IF EXISTS tags")
+    cursor.execute("CREATE TABLE tags (userId INTEGER, movieId INTEGER, tag TEXT, timestamp INTEGER)")
+    print("Created table: tags")
 
-        for filename, table, col_count in files_map:
-            try:
-                with open(filename, 'r', encoding='utf-8') as f:
-                    reader = csv.reader(f)
-                    next(reader)
-                    placeholders = ",".join(["?"] * col_count)
-                    cursor.executemany(f"INSERT INTO {table} VALUES ({placeholders})", reader)
-                    print(f"Data loaded into '{table}'")
-            except FileNotFoundError:
-                print(f"Error: File '{filename}' not found.")
+    def insert_data(file_name, table_name, columns):
+        try:
+            with open(file_name, "r", encoding="utf-8") as file:
+                reader = csv.reader(file)
+                next(reader)
 
-        print("\nDatabase setup completed.")
+                placeholders = ",".join(["?"] * columns)
+                sql = f"INSERT INTO {table_name} VALUES ({placeholders})"
+
+                cursor.executemany(sql, reader)
+                print(f"Loaded data from {file_name}")
+        except FileNotFoundError:
+            print(f"File not found: {file_name}")
+
+    insert_data("movies.csv", "movies", 3)
+    insert_data("links.csv", "links", 3)
+    insert_data("ratings.csv", "ratings", 4)
+    insert_data("tags.csv", "tags", 4)
+
+    connection.commit()
+    connection.close()
+    print("Database is ready.")
+
 
 if __name__ == "__main__":
-    setup_database()
+    make_database()
