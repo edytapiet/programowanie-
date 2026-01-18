@@ -12,7 +12,7 @@ app = FastAPI()
 
 print("Ładowanie modelu YOLO...")
 model = YOLO('yolov8n.pt')
-print("Model załadowany!")
+print("Model załadowany")
 
 os.makedirs("images", exist_ok=True)
 os.makedirs("processed", exist_ok=True)
@@ -37,7 +37,7 @@ def process_image(image_path: str):
 
 @app.get("/")
 def read_root():
-    return {"message": "API działa! Wejdź na /docs"}
+    return {"message": "API działa, wejdź na /docs"}
 
 
 
